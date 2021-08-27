@@ -6,7 +6,7 @@ import (
 )
 
 type cache struct {
-	mu         *sync.Mutex
+	mu         sync.Mutex
 	lru        *lru.Cache
 	cacheBytes int64
 }
