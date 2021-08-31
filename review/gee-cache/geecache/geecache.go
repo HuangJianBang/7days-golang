@@ -27,6 +27,16 @@ type Group struct {
 	name      string
 	getter    Getter
 	mainCache cache
+	peers     PeerPicker
+}
+
+// RegisterPeers register a PeerPicker for choosing remote peer
+func (g *Group) RegisterPeers(peers PeerPicker) {
+	if g.peers != nil {
+		panic("RegisterPeerPicker called more than once")
+	}
+
+	g.peers = peers
 }
 
 func (g *Group) Get(key string) (ByteView, error) {
@@ -41,8 +51,28 @@ func (g *Group) Get(key string) (ByteView, error) {
 	return g.load(key)
 }
 
+// 使用PickPeer()方法选择节点，若非本机节点，则调用 getFromPe() 从远程获取
+// 若是本机节点或者失败，则回退到getLocally()
 func (g *Group) load(key string) (value ByteView, err error) {
+	if g.peers != nil {
+		if peer, ok := g.peers.PickPeer(key); ok {
+			if value, err = g.getFromPeer(peer, key); err == nil {
+				return value, nil
+			}
+		}
+	}
+
 	return g.getLocally(key)
+}
+
+// 使用 PeerGetter 接口的httpGetter从远程访问节点，获取缓存值
+func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
+	bytes, err := peer.Get(g.name, key)
+	if err != nil {
+		return ByteView{}, err
+	}
+
+	return ByteView{b: bytes}, nil
 }
 
 func (g *Group) getLocally(key string) (ByteView, error) {
