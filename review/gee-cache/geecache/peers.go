@@ -7,6 +7,8 @@
 */
 package geecache
 
+import pb "hjb-geechche/geecache/geecachepb"
+
 /*
 PeerPicker 中的 PickPeer() 方法用于根据传入的 key 选择相应节点PeerGetter
 PeerGetter 的Get() 方法用于从对应group 查找缓存值.PeerGetter对应于本项目中的
@@ -20,5 +22,5 @@ type PeerPicker interface {
 
 // PeerGetter is the interface that must be implemented by a peer.
 type PeerGetter interface {
-	Get(group string, key string) ([]byte, error)
+	Get(in *pb.Request, out *pb.Response) error
 }
